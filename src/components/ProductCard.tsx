@@ -52,6 +52,12 @@ const ProductCard: React.FC<ProductCardProps> = ({
     // Save updated cart to localStorage
     localStorage.setItem('cart', JSON.stringify(existingCart));
     
+    // Dispatch a custom event to notify other components of cart update
+    window.dispatchEvent(new Event('cartUpdated'));
+    
+    // Also trigger storage event for cross-tab sync
+    window.dispatchEvent(new Event('storage'));
+    
     // Show toast notification
     toast({
       title: "Added to cart",

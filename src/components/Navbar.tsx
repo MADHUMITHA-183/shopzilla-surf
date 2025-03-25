@@ -7,14 +7,46 @@ import { Search, ShoppingCart, User, Menu, X } from "lucide-react";
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [cartItemCount, setCartItemCount] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
 
+    // Initialize cart count
+    updateCartCount();
+
+    // Add listener for localStorage changes
+    window.addEventListener("storage", updateCartCount);
     window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    
+    return () => {
+      window.removeEventListener("storage", updateCartCount);
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
+  // Update cart count from localStorage
+  const updateCartCount = () => {
+    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    const count = cart.reduce((total: number, item: any) => total + item.quantity, 0);
+    setCartItemCount(count);
+  };
+
+  // Also update cart count when component mounts and whenever it might change
+  useEffect(() => {
+    // Custom event listener for cart updates
+    const handleCartUpdate = () => updateCartCount();
+    window.addEventListener("cartUpdated", handleCartUpdate);
+    
+    // Check every second in case cart is updated from another component
+    const interval = setInterval(updateCartCount, 1000);
+    
+    return () => {
+      window.removeEventListener("cartUpdated", handleCartUpdate);
+      clearInterval(interval);
+    };
   }, []);
 
   const toggleMobileMenu = () => {
@@ -61,10 +93,10 @@ const Navbar = () => {
           <Link to="/cart" className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition-colors relative">
             <ShoppingCart className="w-5 h-5" />
             <span className="absolute -top-1 -right-1 bg-accent text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-              0
+              {cartItemCount}
             </span>
           </Link>
-          <Link to="/account" className="hidden md:flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition-colors">
+          <Link to="/login" className="hidden md:flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition-colors">
             <User className="w-5 h-5" />
           </Link>
           <button 
@@ -113,11 +145,11 @@ const Navbar = () => {
             About
           </Link>
           <Link 
-            to="/account" 
+            to="/login" 
             className="text-xl font-medium"
             onClick={() => setIsMobileMenuOpen(false)}
           >
-            Account
+            Login
           </Link>
           <div className="pt-6 border-t border-gray-100">
             <button className="flex items-center space-x-2 text-xl font-medium">

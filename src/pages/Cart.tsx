@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { ShoppingCart, X, Trash2, Plus, Minus } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
 interface CartItem {
@@ -19,6 +19,7 @@ const Cart: React.FC = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Load cart items from localStorage
@@ -32,6 +33,9 @@ const Cart: React.FC = () => {
   const updateCart = (updatedCart: CartItem[]) => {
     localStorage.setItem('cart', JSON.stringify(updatedCart));
     setCartItems(updatedCart);
+    // Dispatch events to update cart count in navbar
+    window.dispatchEvent(new Event('cartUpdated'));
+    window.dispatchEvent(new Event('storage'));
   };
 
   const removeItem = (id: number) => {
@@ -54,6 +58,51 @@ const Cart: React.FC = () => {
 
   const calculateTotal = () => {
     return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+  };
+
+  const handleCheckout = () => {
+    // Check if user is logged in
+    const isLoggedIn = localStorage.getItem('currentUser');
+    
+    if (!isLoggedIn) {
+      // Redirect to login with return URL
+      toast({
+        title: "Login Required",
+        description: "Please login to proceed with checkout.",
+      });
+      navigate('/login', { state: { returnUrl: '/cart' } });
+      return;
+    }
+    
+    // Simulate sending request to class coordinator
+    toast({
+      title: "Order Submitted",
+      description: "Your order has been sent to your class coordinator for approval.",
+    });
+    
+    // Store order in pending orders
+    const userInfo = JSON.parse(isLoggedIn);
+    const pendingOrders = JSON.parse(localStorage.getItem('pendingOrders') || '[]');
+    
+    pendingOrders.push({
+      id: Date.now(),
+      userId: userInfo.id,
+      userName: userInfo.name,
+      userRole: userInfo.role,
+      items: cartItems,
+      totalAmount: calculateTotal(),
+      tax: calculateTotal() * 0.18,
+      status: 'pending_coordinator',
+      dateCreated: new Date().toISOString()
+    });
+    
+    localStorage.setItem('pendingOrders', JSON.stringify(pendingOrders));
+    
+    // Clear cart
+    updateCart([]);
+    
+    // Navigate to confirmation page
+    navigate('/order-confirmation');
   };
 
   if (isLoading) {
@@ -186,7 +235,10 @@ const Cart: React.FC = () => {
                     </div>
                   </div>
                   
-                  <button className="w-full bg-accent hover:bg-accent/90 text-white px-4 py-3 rounded-lg font-medium transition-colors">
+                  <button 
+                    className="w-full bg-accent hover:bg-accent/90 text-white px-4 py-3 rounded-lg font-medium transition-colors"
+                    onClick={handleCheckout}
+                  >
                     Proceed to Checkout
                   </button>
                   
