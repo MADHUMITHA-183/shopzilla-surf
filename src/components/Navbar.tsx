@@ -36,7 +36,7 @@ const Navbar = () => {
           className="text-2xl font-display font-bold tracking-tight opacity-0 animate-fade-in"
           style={{ animationDelay: "100ms" }}
         >
-          shopzilla
+          Stores
         </Link>
 
         <nav className="hidden md:flex space-x-10 items-center opacity-0 animate-fade-in" style={{ animationDelay: "200ms" }}>

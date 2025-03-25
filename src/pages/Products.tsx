@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -6,63 +5,119 @@ import ProductCard from "@/components/ProductCard";
 import { cn } from "@/lib/utils";
 import { ChevronDown, Filter, X } from "lucide-react";
 
-// Sample product data
+// College products data
 const allProducts = [
   {
     id: 1,
-    name: "Minimalist Desk Lamp",
-    price: 129.99,
-    image: "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
-    category: "Lighting"
+    name: "Record Note",
+    price: 75.00,
+    image: "https://images.unsplash.com/photo-1517842645767-c639042777db?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
+    category: "Notes"
   },
   {
     id: 2,
-    name: "Ergonomic Office Chair",
-    price: 349.99,
-    image: "https://images.unsplash.com/photo-1505843490538-5133c6c7d0e1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
-    category: "Furniture"
+    name: "Theory Note",
+    price: 85.00,
+    image: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
+    category: "Notes"
   },
   {
     id: 3,
-    name: "Wireless Charging Pad",
-    price: 59.99,
-    image: "https://images.unsplash.com/photo-1586495777744-4413f21062fa?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
-    category: "Electronics"
+    name: "Observation Note",
+    price: 95.00,
+    image: "https://images.unsplash.com/photo-1501504905252-473c47e087f8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
+    category: "Notes"
   },
   {
     id: 4,
-    name: "Smart Home Speaker",
-    price: 199.99,
-    image: "https://images.unsplash.com/photo-1589003511763-bf9a76b23f13?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
-    category: "Electronics"
+    name: "Time Book",
+    price: 65.00,
+    image: "https://images.unsplash.com/photo-1506784983877-45594efa4cbe?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
+    category: "Notes"
   },
   {
     id: 5,
-    name: "Marble Coffee Table",
-    price: 299.99,
-    image: "https://images.unsplash.com/photo-1533779283484-8ad4940aa3a8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
-    category: "Furniture"
+    name: "ID Card Holder",
+    price: 49.99,
+    image: "https://images.unsplash.com/photo-1586105251261-72a756497a11?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
+    category: "Accessories"
   },
   {
     id: 6,
-    name: "Ceramic Plant Pot",
-    price: 49.99,
-    image: "https://images.unsplash.com/photo-1485955900006-10f4d324d411?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
-    category: "Home Decor"
+    name: "ID Card Strap",
+    price: 35.00,
+    image: "https://images.unsplash.com/photo-1517842645767-c639042777db?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
+    category: "Accessories"
   },
   {
     id: 7,
-    name: "Bluetooth Headphones",
-    price: 179.99,
-    image: "https://images.unsplash.com/photo-1546435770-a3e426bf472b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
-    category: "Electronics"
+    name: "Shirt Piece",
+    price: 449.99,
+    image: "https://images.unsplash.com/photo-1588359348347-9bc6cbbb689e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
+    category: "Uniform"
   },
   {
     id: 8,
-    name: "Minimalist Wall Clock",
-    price: 79.99,
-    image: "https://images.unsplash.com/photo-1563861826100-9cb868fdbe1c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
-    category: "Home Decor"
+    name: "Pant Piece",
+    price: 499.99,
+    image: "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
+    category: "Uniform"
+  },
+  {
+    id: 9,
+    name: "Black T-shirt",
+    price: 399.99,
+    image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
+    category: "Uniform"
+  },
+  {
+    id: 10,
+    name: "Hoodie",
+    price: 599.99,
+    image: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
+    category: "Uniform"
+  },
+  {
+    id: 11,
+    name: "Toolkit",
+    price: 799.99,
+    image: "https://images.unsplash.com/photo-1530124566582-a618bc2615dc?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
+    category: "Equipment"
+  },
+  {
+    id: 12,
+    name: "Laptop",
+    price: 45999.99,
+    image: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
+    category: "Equipment"
+  },
+  {
+    id: 13,
+    name: "Laptop Bag",
+    price: 899.99,
+    image: "https://images.unsplash.com/photo-1547949003-9792a18a2601?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
+    category: "Accessories"
+  },
+  {
+    id: 14,
+    name: "Sports T-shirt",
+    price: 349.99,
+    image: "https://images.unsplash.com/photo-1565061828011-282424b9ab40?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
+    category: "Sports"
+  },
+  {
+    id: 15,
+    name: "Shoes",
+    price: 1299.99,
+    image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
+    category: "Sports"
+  },
+  {
+    id: 16,
+    name: "HRP Book",
+    price: 249.99,
+    image: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
+    category: "Books"
   }
 ];
 
@@ -94,9 +149,9 @@ const Products: React.FC = () => {
       <main className="pt-24 pb-16 px-6 md:px-12 lg:px-24">
         <div className="max-w-7xl mx-auto">
           <div className="mb-12">
-            <h1 className="text-3xl md:text-4xl font-display font-bold tracking-tight mb-4 opacity-0 animate-fade-in">All Products</h1>
+            <h1 className="text-3xl md:text-4xl font-display font-bold tracking-tight mb-4 opacity-0 animate-fade-in">College Essentials</h1>
             <p className="text-gray-600 max-w-2xl opacity-0 animate-fade-in" style={{ animationDelay: "100ms" }}>
-              Browse our collection of premium products designed for modern living.
+              Browse our collection of essential items for your academic journey.
             </p>
           </div>
 
@@ -131,8 +186,8 @@ const Products: React.FC = () => {
                     <div className="absolute right-1/2 top-1/2 w-3 h-3 bg-white rounded-full border-2 border-accent transform -translate-y-1/2"></div>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm">$0</span>
-                    <span className="text-sm">$500</span>
+                    <span className="text-sm">₹0</span>
+                    <span className="text-sm">₹50,000</span>
                   </div>
                 </div>
               </div>
@@ -210,8 +265,8 @@ const Products: React.FC = () => {
                   <div className="absolute right-1/2 top-1/2 w-3 h-3 bg-white rounded-full border-2 border-accent transform -translate-y-1/2"></div>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm">$0</span>
-                  <span className="text-sm">$500</span>
+                  <span className="text-sm">₹0</span>
+                  <span className="text-sm">₹50,000</span>
                 </div>
               </div>
               
