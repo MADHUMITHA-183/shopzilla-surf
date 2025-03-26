@@ -1,147 +1,89 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
 import { cn } from "@/lib/utils";
 import { ChevronDown, Filter, X } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
-// College products data
-const allProducts = [
-  {
-    id: 1,
-    name: "Record Note",
-    price: 75.00,
-    image: "https://images.unsplash.com/photo-1517842645767-c639042777db?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
-    category: "Notes"
-  },
-  {
-    id: 2,
-    name: "Theory Note",
-    price: 85.00,
-    image: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
-    category: "Notes"
-  },
-  {
-    id: 3,
-    name: "Observation Note",
-    price: 95.00,
-    image: "https://images.unsplash.com/photo-1501504905252-473c47e087f8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
-    category: "Notes"
-  },
-  {
-    id: 4,
-    name: "Time Book",
-    price: 65.00,
-    image: "https://images.unsplash.com/photo-1506784983877-45594efa4cbe?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
-    category: "Notes"
-  },
-  {
-    id: 5,
-    name: "ID Card Holder",
-    price: 49.99,
-    image: "https://images.unsplash.com/photo-1586105251261-72a756497a11?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
-    category: "Accessories"
-  },
-  {
-    id: 6,
-    name: "ID Card Strap",
-    price: 35.00,
-    image: "https://images.unsplash.com/photo-1517842645767-c639042777db?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
-    category: "Accessories"
-  },
-  {
-    id: 7,
-    name: "Shirt Piece",
-    price: 449.99,
-    image: "https://images.unsplash.com/photo-1588359348347-9bc6cbbb689e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
-    category: "Uniform"
-  },
-  {
-    id: 8,
-    name: "Pant Piece",
-    price: 499.99,
-    image: "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
-    category: "Uniform"
-  },
-  {
-    id: 9,
-    name: "Black T-shirt",
-    price: 399.99,
-    image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
-    category: "Uniform"
-  },
-  {
-    id: 10,
-    name: "Hoodie",
-    price: 599.99,
-    image: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
-    category: "Uniform"
-  },
-  {
-    id: 11,
-    name: "Toolkit",
-    price: 799.99,
-    image: "https://images.unsplash.com/photo-1530124566582-a618bc2615dc?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
-    category: "Equipment"
-  },
-  {
-    id: 12,
-    name: "Laptop",
-    price: 45999.99,
-    image: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
-    category: "Equipment"
-  },
-  {
-    id: 13,
-    name: "Laptop Bag",
-    price: 899.99,
-    image: "https://images.unsplash.com/photo-1547949003-9792a18a2601?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
-    category: "Accessories"
-  },
-  {
-    id: 14,
-    name: "Sports T-shirt",
-    price: 349.99,
-    image: "https://images.unsplash.com/photo-1565061828011-282424b9ab40?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
-    category: "Sports"
-  },
-  {
-    id: 15,
-    name: "Shoes",
-    price: 1299.99,
-    image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
-    category: "Sports"
-  },
-  {
-    id: 16,
-    name: "HRP Book",
-    price: 249.99,
-    image: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
-    category: "Books"
-  }
-];
-
-// Get unique categories
-const categories = ["All", ...Array.from(new Set(allProducts.map(product => product.category)))];
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+  category: string;
+  description?: string;
+  stock: number;
+}
 
 const Products: React.FC = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [activeCategory, setActiveCategory] = useState("All");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [sortOrder, setSortOrder] = useState("featured");
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*');
+
+        if (error) {
+          throw error;
+        }
+
+        setProducts(data);
+
+        // Extract unique categories
+        const uniqueCategories = Array.from(new Set(data.map(product => product.category)));
+        setCategories(["All", ...uniqueCategories]);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load products. Please try again later.",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [toast]);
 
   // Filter products by category
   const filteredProducts = activeCategory === "All" 
-    ? allProducts 
-    : allProducts.filter(product => product.category === activeCategory);
+    ? products 
+    : products.filter(product => product.category === activeCategory);
 
   // Sort products
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     if (sortOrder === "price-asc") return a.price - b.price;
     if (sortOrder === "price-desc") return b.price - a.price;
     if (sortOrder === "name") return a.name.localeCompare(b.name);
+    if (sortOrder === "stock-desc") return b.stock - a.stock;
+    if (sortOrder === "stock-asc") return a.stock - b.stock;
     // Default: featured
     return 0;
   });
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Navbar />
+        <div className="pt-32 flex justify-center items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -212,6 +154,8 @@ const Products: React.FC = () => {
                   <option value="price-asc">Price: Low to High</option>
                   <option value="price-desc">Price: High to Low</option>
                   <option value="name">Name</option>
+                  <option value="stock-desc">Stock: High to Low</option>
+                  <option value="stock-asc">Stock: Low to High</option>
                 </select>
                 <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 pointer-events-none" />
               </div>
@@ -293,6 +237,8 @@ const Products: React.FC = () => {
                     <option value="price-asc">Price: Low to High</option>
                     <option value="price-desc">Price: High to Low</option>
                     <option value="name">Name</option>
+                    <option value="stock-desc">Stock: High to Low</option>
+                    <option value="stock-asc">Stock: Low to High</option>
                   </select>
                   <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 pointer-events-none" />
                 </div>
@@ -302,7 +248,12 @@ const Products: React.FC = () => {
                 {sortedProducts.map((product, index) => (
                   <ProductCard
                     key={product.id}
-                    {...product}
+                    id={product.id}
+                    name={product.name}
+                    price={product.price}
+                    image={product.image}
+                    category={product.category}
+                    stock={product.stock}
                     index={index}
                   />
                 ))}

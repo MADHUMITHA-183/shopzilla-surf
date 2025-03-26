@@ -1,42 +1,66 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import ProductCard from "./ProductCard";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
-// College products data
-const featuredProducts = [
-  {
-    id: 1,
-    name: "Record Note",
-    price: 75.00,
-    image: "https://images.unsplash.com/photo-1517842645767-c639042777db?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
-    category: "Notes"
-  },
-  {
-    id: 2,
-    name: "ID Card Holder",
-    price: 49.99,
-    image: "https://images.unsplash.com/photo-1586105251261-72a756497a11?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
-    category: "Accessories"
-  },
-  {
-    id: 3,
-    name: "Laptop Bag",
-    price: 899.99,
-    image: "https://images.unsplash.com/photo-1547949003-9792a18a2601?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
-    category: "Accessories"
-  },
-  {
-    id: 4,
-    name: "Black Hoodie",
-    price: 599.99,
-    image: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1050&q=80",
-    category: "Uniform"
-  }
-];
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+  category: string;
+  description?: string;
+  stock: number;
+}
 
 const FeaturedProducts: React.FC = () => {
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchFeaturedProducts = async () => {
+      try {
+        // Fetch only 4 products for the featured section
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .limit(4);
+
+        if (error) {
+          throw error;
+        }
+
+        setFeaturedProducts(data);
+      } catch (error) {
+        console.error("Error fetching featured products:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load featured products. Please try again later.",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchFeaturedProducts();
+  }, [toast]);
+
+  if (isLoading) {
+    return (
+      <section className="py-16 px-6 md:px-12 lg:px-24 bg-gray-50">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex justify-center items-center py-24">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-accent"></div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="py-16 px-6 md:px-12 lg:px-24 bg-gray-50">
       <div className="max-w-7xl mx-auto">
@@ -66,8 +90,13 @@ const FeaturedProducts: React.FC = () => {
           {featuredProducts.map((product, index) => (
             <ProductCard
               key={product.id}
-              {...product}
+              id={product.id}
+              name={product.name}
+              price={product.price}
+              image={product.image}
+              category={product.category}
               index={index + 1}
+              stock={product.stock}
             />
           ))}
         </div>
