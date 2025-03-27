@@ -38,8 +38,24 @@ serve(async (req) => {
     const expiryTime = new Date();
     expiryTime.setMinutes(expiryTime.getMinutes() + 15);
     
-    // This is just for storage, not for authentication
-    // We don't have a user ID yet, so we'll use the mobile number to identify the OTP
+    // Create a Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Store the OTP in the database
+    const { error } = await supabase
+      .from('otp_codes')
+      .insert({
+        code: otp,
+        expires_at: expiryTime.toISOString(),
+        user_id: null // Will be linked to user after verification
+      });
+
+    if (error) {
+      console.error("Error storing OTP:", error);
+      throw new Error("Failed to store OTP");
+    }
     
     return new Response(
       JSON.stringify({ 
