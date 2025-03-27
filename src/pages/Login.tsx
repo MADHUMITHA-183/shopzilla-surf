@@ -23,6 +23,7 @@ import {
   InputOTPGroup, 
   InputOTPSlot 
 } from "@/components/ui/input-otp";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Form validation schema
 const loginSchema = z.object({
@@ -44,7 +45,6 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [isOtpMode, setIsOtpMode] = useState(false);
   const [isOtpSent, setIsOtpSent] = useState(false);
   
   // Initialize login form
@@ -179,6 +179,7 @@ const Login: React.FC = () => {
       // For now, we'll just verify that they provided an OTP
       // In a real system, you would check this against the database
       
+      // Demo success message
       toast({
         title: "OTP Verification Successful",
         description: "You are now logged in",
@@ -199,12 +200,6 @@ const Login: React.FC = () => {
     }
   };
 
-  // Toggle between login methods
-  const toggleLoginMethod = () => {
-    setIsOtpMode(!isOtpMode);
-    setIsOtpSent(false);
-  };
-
   return (
     <div className="min-h-screen bg-white">
       <main className="pt-16 pb-16 px-6 md:px-12 lg:px-24">
@@ -215,185 +210,174 @@ const Login: React.FC = () => {
           </div>
           
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-            {isOtpMode ? (
-              // OTP-based login form
-              <Form {...otpForm}>
-                <form onSubmit={otpForm.handleSubmit(onSubmitOtp)} className="p-8 space-y-6">
-                  <FormField
-                    control={otpForm.control}
-                    name="mobile"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Mobile Number</FormLabel>
-                        <div className="relative flex">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <Smartphone className="h-5 w-5 text-gray-400" />
-                          </div>
-                          <FormControl>
-                            <Input
-                              type="tel"
-                              placeholder="9876543210"
-                              className="pl-10 flex-grow"
-                              {...field}
-                            />
-                          </FormControl>
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            className="ml-2" 
-                            onClick={handleSendOTP}
-                            disabled={isOtpSent}
-                          >
-                            {isOtpSent ? "OTP Sent" : "Send OTP"}
-                          </Button>
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  {isOtpSent && (
+            <Tabs defaultValue="otp" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="otp">Login with OTP</TabsTrigger>
+                <TabsTrigger value="password">Login with Password</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="otp" className="p-6">
+                <Form {...otpForm}>
+                  <form onSubmit={otpForm.handleSubmit(onSubmitOtp)} className="space-y-6">
                     <FormField
                       control={otpForm.control}
-                      name="otp"
+                      name="mobile"
                       render={({ field }) => (
-                        <FormItem className="mt-4">
-                          <FormLabel>Enter OTP</FormLabel>
-                          <FormControl>
-                            <InputOTP maxLength={6} {...field}>
-                              <InputOTPGroup>
-                                <InputOTPSlot index={0} />
-                                <InputOTPSlot index={1} />
-                                <InputOTPSlot index={2} />
-                                <InputOTPSlot index={3} />
-                                <InputOTPSlot index={4} />
-                                <InputOTPSlot index={5} />
-                              </InputOTPGroup>
-                            </InputOTP>
-                          </FormControl>
+                        <FormItem>
+                          <FormLabel>Mobile Number</FormLabel>
+                          <div className="relative flex">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                              <Smartphone className="h-5 w-5 text-gray-400" />
+                            </div>
+                            <FormControl>
+                              <Input
+                                type="tel"
+                                placeholder="9876543210"
+                                className="pl-10 flex-grow"
+                                {...field}
+                              />
+                            </FormControl>
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              className="ml-2" 
+                              onClick={handleSendOTP}
+                              disabled={isOtpSent}
+                            >
+                              {isOtpSent ? "OTP Sent" : "Send OTP"}
+                            </Button>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                  )}
-                  
-                  <Button
-                    type="submit"
-                    className="w-full bg-accent text-white py-3 hover:bg-accent/90"
-                    disabled={isSubmitting || !isOtpSent}
-                  >
-                    {isSubmitting ? "Verifying..." : "Verify & Sign In"}
-                  </Button>
-                  
-                  <div className="mt-4 text-center">
-                    <p className="text-sm text-gray-600">
-                      Don't have an account?{" "}
-                      <Link to="/register" className="text-accent font-medium hover:underline">
-                        Create account
-                      </Link>
-                    </p>
-                    <p className="text-sm text-gray-600 mt-2">
-                      <button 
-                        type="button" 
-                        onClick={toggleLoginMethod}
-                        className="text-accent font-medium hover:underline"
-                      >
-                        Sign in with Email and Password instead
-                      </button>
-                    </p>
-                  </div>
-                </form>
-              </Form>
-            ) : (
-              // Email/password login form
-              <Form {...loginForm}>
-                <form onSubmit={loginForm.handleSubmit(onSubmitLogin)} className="p-8 space-y-6">
-                  <FormField
-                    control={loginForm.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <div className="relative">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <Mail className="h-5 w-5 text-gray-400" />
-                          </div>
-                          <FormControl>
-                            <Input
-                              type="email"
-                              placeholder="you@example.com"
-                              className="pl-10"
-                              {...field}
-                            />
-                          </FormControl>
-                        </div>
-                        <FormMessage />
-                      </FormItem>
+                    
+                    {isOtpSent && (
+                      <FormField
+                        control={otpForm.control}
+                        name="otp"
+                        render={({ field }) => (
+                          <FormItem className="mt-4">
+                            <FormLabel>Enter OTP</FormLabel>
+                            <FormControl>
+                              <InputOTP maxLength={6} {...field}>
+                                <InputOTPGroup>
+                                  <InputOTPSlot index={0} />
+                                  <InputOTPSlot index={1} />
+                                  <InputOTPSlot index={2} />
+                                  <InputOTPSlot index={3} />
+                                  <InputOTPSlot index={4} />
+                                  <InputOTPSlot index={5} />
+                                </InputOTPGroup>
+                              </InputOTP>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     )}
-                  />
-                  
-                  <FormField
-                    control={loginForm.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <div className="relative">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <KeyRound className="h-5 w-5 text-gray-400" />
+                    
+                    <Button
+                      type="submit"
+                      className="w-full bg-accent text-white py-3 hover:bg-accent/90"
+                      disabled={isSubmitting || !isOtpSent}
+                    >
+                      {isSubmitting ? "Verifying..." : "Verify & Sign In"}
+                    </Button>
+                    
+                    <div className="mt-4 text-center">
+                      <p className="text-sm text-gray-600">
+                        Don't have an account?{" "}
+                        <Link to="/register" className="text-accent font-medium hover:underline">
+                          Create account
+                        </Link>
+                      </p>
+                    </div>
+                  </form>
+                </Form>
+              </TabsContent>
+              
+              <TabsContent value="password" className="p-6">
+                <Form {...loginForm}>
+                  <form onSubmit={loginForm.handleSubmit(onSubmitLogin)} className="space-y-6">
+                    <FormField
+                      control={loginForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                              <Mail className="h-5 w-5 text-gray-400" />
+                            </div>
+                            <FormControl>
+                              <Input
+                                type="email"
+                                placeholder="you@example.com"
+                                className="pl-10"
+                                {...field}
+                              />
+                            </FormControl>
                           </div>
-                          <FormControl>
-                            <Input
-                              type={showPassword ? "text" : "password"}
-                              placeholder="••••••••"
-                              className="pl-10 pr-10"
-                              {...field}
-                            />
-                          </FormControl>
-                          <div 
-                            className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer" 
-                            onClick={() => setShowPassword(!showPassword)}
-                          >
-                            {showPassword ? (
-                              <EyeOffIcon className="h-5 w-5 text-gray-400" />
-                            ) : (
-                              <EyeIcon className="h-5 w-5 text-gray-400" />
-                            )}
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={loginForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password</FormLabel>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                              <KeyRound className="h-5 w-5 text-gray-400" />
+                            </div>
+                            <FormControl>
+                              <Input
+                                type={showPassword ? "text" : "password"}
+                                placeholder="••••••••"
+                                className="pl-10 pr-10"
+                                {...field}
+                              />
+                            </FormControl>
+                            <div 
+                              className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer" 
+                              onClick={() => setShowPassword(!showPassword)}
+                            >
+                              {showPassword ? (
+                                <EyeOffIcon className="h-5 w-5 text-gray-400" />
+                              ) : (
+                                <EyeIcon className="h-5 w-5 text-gray-400" />
+                              )}
+                            </div>
                           </div>
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <Button
-                    type="submit"
-                    className="w-full bg-accent text-white py-3 hover:bg-accent/90"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? "Signing In..." : "Sign In"}
-                  </Button>
-                  
-                  <div className="mt-4 text-center">
-                    <p className="text-sm text-gray-600">
-                      Don't have an account?{" "}
-                      <Link to="/register" className="text-accent font-medium hover:underline">
-                        Create account
-                      </Link>
-                    </p>
-                    <p className="text-sm text-gray-600 mt-2">
-                      <button 
-                        type="button" 
-                        onClick={toggleLoginMethod}
-                        className="text-accent font-medium hover:underline"
-                      >
-                        Sign in with OTP instead
-                      </button>
-                    </p>
-                  </div>
-                </form>
-              </Form>
-            )}
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <Button
+                      type="submit"
+                      className="w-full bg-accent text-white py-3 hover:bg-accent/90"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? "Signing In..." : "Sign In"}
+                    </Button>
+                    
+                    <div className="mt-4 text-center">
+                      <p className="text-sm text-gray-600">
+                        Don't have an account?{" "}
+                        <Link to="/register" className="text-accent font-medium hover:underline">
+                          Create account
+                        </Link>
+                      </p>
+                    </div>
+                  </form>
+                </Form>
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </main>
