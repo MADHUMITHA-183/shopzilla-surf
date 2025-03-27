@@ -1,55 +1,101 @@
 
 import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import Footer from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
-import { User, KeyRound } from "lucide-react";
+import { Mail, KeyRound, EyeIcon, EyeOffIcon } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { 
+  Form, 
+  FormControl, 
+  FormField, 
+  FormItem, 
+  FormLabel, 
+  FormMessage 
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+
+const formSchema = z.object({
+  email: z.string().email({ message: "Invalid email address" }),
+  password: z.string().min(1, { message: "Password is required" }),
+});
+
+type FormValues = z.infer<typeof formSchema>;
 
 const Login: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const { toast } = useToast();
   const navigate = useNavigate();
-  const location = useLocation();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  
+  // Initialize form
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
 
   // Check if user is already logged in
   useEffect(() => {
-    const user = localStorage.getItem('currentUser');
-    if (user) {
-      // Redirect to home page
-      navigate('/home');
-    }
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        navigate('/home');
+      }
+    };
+    
+    checkSession();
   }, [navigate]);
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (values: FormValues) => {
+    setIsSubmitting(true);
     
-    // Simulate authentication
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    const user = users.find((u: any) => u.email === email && u.password === password);
-    
-    if (user) {
-      // Store current user
-      localStorage.setItem('currentUser', JSON.stringify({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role
-      }));
-      
-      toast({
-        title: "Login Successful",
-        description: `Welcome back, ${user.name}!`,
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: values.email,
+        password: values.password,
       });
       
-      // Redirect to home page
-      navigate('/home');
-    } else {
+      if (error) throw error;
+      
+      if (data.user) {
+        // Fetch user profile based on role
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('role, verified')
+          .eq('id', data.user.id)
+          .single();
+        
+        if (userError) throw userError;
+        
+        if (!userData.verified) {
+          throw new Error("Your account is not verified. Please contact support.");
+        }
+        
+        // Successful login
+        toast({
+          title: "Login Successful",
+          description: `Welcome back!`,
+        });
+        
+        // Redirect to home page
+        navigate('/home');
+      }
+    } catch (error: any) {
+      console.error("Login error:", error);
       toast({
         title: "Login Failed",
-        description: "Invalid email or password. Please try again.",
+        description: error.message || "Invalid email or password. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -58,68 +104,89 @@ const Login: React.FC = () => {
       <main className="pt-16 pb-16 px-6 md:px-12 lg:px-24">
         <div className="max-w-md mx-auto">
           <div className="mb-10 text-center">
-            <h1 className="text-3xl font-bold mb-2">Welcome to Stores</h1>
-            <p className="text-gray-600">Access your college supplies account</p>
+            <h1 className="text-3xl font-bold mb-2">Welcome Back</h1>
+            <p className="text-gray-600">Sign in to your account</p>
           </div>
           
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-            <form onSubmit={handleLogin} className="p-8">
-              <div className="mb-6">
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  Email
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="email"
-                    type="email"
-                    className="pl-10 block w-full rounded-lg border border-gray-300 py-3 px-4 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="p-8 space-y-6">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <Mail className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <FormControl>
+                          <Input
+                            type="email"
+                            placeholder="you@example.com"
+                            className="pl-10"
+                            {...field}
+                          />
+                        </FormControl>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <KeyRound className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <FormControl>
+                          <Input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="••••••••"
+                            className="pl-10 pr-10"
+                            {...field}
+                          />
+                        </FormControl>
+                        <div 
+                          className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer" 
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? (
+                            <EyeOffIcon className="h-5 w-5 text-gray-400" />
+                          ) : (
+                            <EyeIcon className="h-5 w-5 text-gray-400" />
+                          )}
+                        </div>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <Button
+                  type="submit"
+                  className="w-full bg-accent text-white py-3 hover:bg-accent/90"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Signing In..." : "Sign In"}
+                </Button>
+                
+                <div className="mt-4 text-center">
+                  <p className="text-sm text-gray-600">
+                    Don't have an account?{" "}
+                    <Link to="/register" className="text-accent font-medium hover:underline">
+                      Create account
+                    </Link>
+                  </p>
                 </div>
-              </div>
-              
-              <div className="mb-6">
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                  Password
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <KeyRound className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="password"
-                    type="password"
-                    className="pl-10 block w-full rounded-lg border border-gray-300 py-3 px-4 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-              
-              <button
-                type="submit"
-                className="w-full bg-accent text-white rounded-lg py-3 font-medium hover:bg-accent/90 transition-colors"
-              >
-                Sign In
-              </button>
-              
-              <div className="mt-4 text-center">
-                <p className="text-sm text-gray-600">
-                  Don't have an account?{" "}
-                  <Link to="/register" className="text-accent font-medium hover:underline">
-                    Create account
-                  </Link>
-                </p>
-              </div>
-            </form>
+              </form>
+            </Form>
           </div>
         </div>
       </main>

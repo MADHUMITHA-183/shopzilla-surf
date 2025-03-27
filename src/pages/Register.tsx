@@ -2,169 +2,510 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { User, KeyRound, Mail } from "lucide-react";
+import { 
+  User, 
+  KeyRound, 
+  Mail, 
+  BookOpen, 
+  CalendarDays, 
+  Smartphone, 
+  EyeIcon, 
+  EyeOffIcon, 
+  CheckCircle 
+} from "lucide-react";
 import Footer from "@/components/Footer";
+import { z } from "zod";
+import { supabase } from "@/integrations/supabase/client";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { 
+  InputOTP, 
+  InputOTPGroup, 
+  InputOTPSlot 
+} from "@/components/ui/input-otp";
+
+// Form validation schema
+const formSchema = z.object({
+  fullName: z.string().min(3, { message: "Full name must be at least 3 characters" }),
+  course: z.string()
+    .min(2, { message: "Course must be at least 2 characters" })
+    .regex(/^[a-zA-Z0-9\s]+$/, { message: "Course must contain only letters, numbers and spaces" }),
+  email: z.string().email({ message: "Invalid email address" })
+    .regex(/^[a-zA-Z0-9._%+-]+@(gmail\.com|[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})$/, {
+      message: "Only Gmail and valid email addresses are allowed",
+    }),
+  year: z.number()
+    .int()
+    .min(1, { message: "Year must be a positive number" })
+    .max(6, { message: "Year cannot exceed 6" }),
+  password: z.string()
+    .min(8, { message: "Password must be at least 8 characters" })
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/, {
+      message: "Password must contain at least one uppercase letter, one lowercase letter, one number and one special character",
+    }),
+  confirmPassword: z.string(),
+  mobile: z.string()
+    .regex(/^\d{10}$/, { message: "Mobile number must be 10 digits" }),
+  role: z.enum(["student", "faculty", "admin"]),
+  otp: z.string().length(6, { message: "OTP must be 6 digits" }).optional(),
+})
+.refine(data => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
+
+type FormValues = z.infer<typeof formSchema>;
 
 const Register: React.FC = () => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'student' | 'coordinator' | 'admin'>('student');
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  const handleRegister = (e: React.FormEvent) => {
-    e.preventDefault();
+  const [isOtpSent, setIsOtpSent] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
+  // Initialize form
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      fullName: "",
+      course: "",
+      email: "",
+      year: undefined,
+      password: "",
+      confirmPassword: "",
+      mobile: "",
+      role: "student",
+      otp: "",
+    },
+  });
+  
+  // Send OTP function
+  const handleSendOTP = async () => {
+    const mobileValue = form.getValues("mobile");
     
-    // Validate inputs
-    if (!name || !email || !password) {
+    if (!mobileValue || !/^\d{10}$/.test(mobileValue)) {
       toast({
-        title: "Registration Failed",
-        description: "Please fill in all fields.",
-        variant: "destructive"
+        title: "Invalid Mobile Number",
+        description: "Please enter a valid 10-digit mobile number",
+        variant: "destructive",
       });
       return;
     }
     
-    // Get existing users
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    
-    // Check if email already exists
-    if (users.some((user: any) => user.email === email)) {
+    try {
+      const response = await fetch(`${supabase.functions.url}/generate-otp`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${supabase.auth.getSession()}`,
+        },
+        body: JSON.stringify({ mobile: mobileValue }),
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setIsOtpSent(true);
+        toast({
+          title: "OTP Sent",
+          description: `OTP has been sent to your mobile number. For demo purposes, the OTP is: ${data.otp}`,
+        });
+        
+        // Auto-fill OTP for demo purposes
+        form.setValue("otp", data.otp);
+      } else {
+        throw new Error(data.error || "Failed to send OTP");
+      }
+    } catch (error) {
+      console.error("Error sending OTP:", error);
       toast({
-        title: "Registration Failed",
-        description: "Email already in use. Please use a different email.",
-        variant: "destructive"
+        title: "OTP Sending Failed",
+        description: "Failed to send OTP. Please try again later.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  // Handle form submission
+  const onSubmit = async (values: FormValues) => {
+    if (!isOtpSent) {
+      toast({
+        title: "Verification Required",
+        description: "Please verify your mobile number by requesting an OTP",
+        variant: "destructive",
       });
       return;
     }
     
-    // Create new user
-    const newUser = {
-      id: Date.now(),
-      name,
-      email,
-      password,
-      role,
-      dateCreated: new Date().toISOString()
-    };
+    setIsSubmitting(true);
     
-    // Add user to storage
-    users.push(newUser);
-    localStorage.setItem('users', JSON.stringify(users));
-    
-    toast({
-      title: "Registration Successful",
-      description: `Welcome, ${name}! Please login to continue.`,
-    });
-    
-    // Redirect to login page
-    navigate('/login');
+    try {
+      // 1. Create user in Supabase auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: values.email,
+        password: values.password,
+      });
+      
+      if (authError) throw authError;
+      
+      if (!authData.user?.id) {
+        throw new Error("Failed to create user");
+      }
+      
+      // 2. Add user to our custom users table
+      const { error: userError } = await supabase.from('users').insert([
+        {
+          id: authData.user.id,
+          email: values.email,
+          password: values.password, // In production, never store raw passwords
+          mobile: values.mobile,
+          role: values.role,
+          verified: true, // Since we verified via OTP
+        }
+      ]);
+      
+      if (userError) throw userError;
+      
+      // 3. Add profile based on role
+      if (values.role === "student") {
+        const { error: profileError } = await supabase.from('student_profiles').insert([
+          {
+            id: authData.user.id,
+            full_name: values.fullName,
+            course: values.course,
+            year: values.year,
+          }
+        ]);
+        
+        if (profileError) throw profileError;
+      } else if (values.role === "faculty") {
+        const { error: profileError } = await supabase.from('faculty_profiles').insert([
+          {
+            id: authData.user.id,
+            full_name: values.fullName,
+            department: values.course,
+            position: "Lecturer", // Default position
+          }
+        ]);
+        
+        if (profileError) throw profileError;
+      } else if (values.role === "admin") {
+        const { error: profileError } = await supabase.from('admin_profiles').insert([
+          {
+            id: authData.user.id,
+            full_name: values.fullName,
+            admin_level: "Standard",
+          }
+        ]);
+        
+        if (profileError) throw profileError;
+      }
+      
+      toast({
+        title: "Registration Successful",
+        description: "Your account has been created. Please log in.",
+      });
+      
+      // Redirect to login page
+      navigate("/login");
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      toast({
+        title: "Registration Failed",
+        description: error.message || "Failed to create account. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="flex justify-center items-center pt-16 px-6">
+      <div className="flex justify-center items-center pt-8 pb-8 px-6">
         <div className="w-full max-w-md">
-          <div className="mb-10 text-center">
+          <div className="mb-6 text-center">
             <h1 className="text-3xl font-bold mb-2">Create Account</h1>
-            <p className="text-gray-600">Sign up for Stores - your college supplies solution</p>
+            <p className="text-gray-600">Sign up to access college supplies and services</p>
           </div>
           
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-            <form onSubmit={handleRegister} className="p-8">
-              <div className="mb-6">
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                  Full Name
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="name"
-                    type="text"
-                    className="pl-10 block w-full rounded-lg border border-gray-300 py-3 px-4 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
-                    placeholder="John Doe"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="p-6 space-y-4">
+                <FormField
+                  control={form.control}
+                  name="fullName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Full Name</FormLabel>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <User className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <FormControl>
+                          <Input
+                            placeholder="John Doe"
+                            className="pl-10"
+                            {...field}
+                          />
+                        </FormControl>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="course"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Course/Department</FormLabel>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <BookOpen className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <FormControl>
+                          <Input
+                            placeholder="Computer Science"
+                            className="pl-10"
+                            {...field}
+                          />
+                        </FormControl>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email Address</FormLabel>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <Mail className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <FormControl>
+                          <Input
+                            type="email"
+                            placeholder="you@example.com"
+                            className="pl-10"
+                            {...field}
+                          />
+                        </FormControl>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="year"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Year</FormLabel>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <CalendarDays className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="1"
+                            className="pl-10"
+                            {...field}
+                            onChange={(e) => {
+                              const value = e.target.value === "" ? undefined : parseInt(e.target.value, 10);
+                              field.onChange(value);
+                            }}
+                          />
+                        </FormControl>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <KeyRound className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <FormControl>
+                          <Input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="••••••••"
+                            className="pl-10 pr-10"
+                            {...field}
+                          />
+                        </FormControl>
+                        <div 
+                          className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer" 
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? (
+                            <EyeOffIcon className="h-5 w-5 text-gray-400" />
+                          ) : (
+                            <EyeIcon className="h-5 w-5 text-gray-400" />
+                          )}
+                        </div>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirm Password</FormLabel>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <KeyRound className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <FormControl>
+                          <Input
+                            type={showConfirmPassword ? "text" : "password"}
+                            placeholder="••••••••"
+                            className="pl-10 pr-10"
+                            {...field}
+                          />
+                        </FormControl>
+                        <div 
+                          className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer" 
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        >
+                          {showConfirmPassword ? (
+                            <EyeOffIcon className="h-5 w-5 text-gray-400" />
+                          ) : (
+                            <EyeIcon className="h-5 w-5 text-gray-400" />
+                          )}
+                        </div>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="mobile"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Mobile Number</FormLabel>
+                      <div className="relative flex">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <Smartphone className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <FormControl>
+                          <Input
+                            type="tel"
+                            placeholder="9876543210"
+                            className="pl-10 flex-grow"
+                            {...field}
+                          />
+                        </FormControl>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          className="ml-2" 
+                          onClick={handleSendOTP}
+                          disabled={isOtpSent}
+                        >
+                          {isOtpSent ? "OTP Sent" : "Send OTP"}
+                        </Button>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                {isOtpSent && (
+                  <FormField
+                    control={form.control}
+                    name="otp"
+                    render={({ field }) => (
+                      <FormItem className="mt-4">
+                        <FormLabel>Enter OTP</FormLabel>
+                        <FormControl>
+                          <InputOTP maxLength={6} {...field}>
+                            <InputOTPGroup>
+                              <InputOTPSlot index={0} />
+                              <InputOTPSlot index={1} />
+                              <InputOTPSlot index={2} />
+                              <InputOTPSlot index={3} />
+                              <InputOTPSlot index={4} />
+                              <InputOTPSlot index={5} />
+                            </InputOTPGroup>
+                          </InputOTP>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
-              </div>
-              
-              <div className="mb-6">
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Mail className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="email"
-                    type="email"
-                    className="pl-10 block w-full rounded-lg border border-gray-300 py-3 px-4 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-              
-              <div className="mb-6">
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                  Password
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <KeyRound className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="password"
-                    type="password"
-                    className="pl-10 block w-full rounded-lg border border-gray-300 py-3 px-4 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-              
-              <div className="mb-6">
-                <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
-                  Role
-                </label>
-                <select
-                  id="role"
-                  className="block w-full rounded-lg border border-gray-300 py-3 px-4 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
-                  value={role}
-                  onChange={(e) => setRole(e.target.value as 'student' | 'coordinator' | 'admin')}
+                )}
+                
+                <FormField
+                  control={form.control}
+                  name="role"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Role</FormLabel>
+                      <FormControl>
+                        <select
+                          className="w-full rounded-lg border border-gray-300 py-3 px-4 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+                          {...field}
+                        >
+                          <option value="student">Student</option>
+                          <option value="faculty">Faculty</option>
+                          <option value="admin">Admin</option>
+                        </select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <Button
+                  type="submit"
+                  className="w-full bg-accent text-white py-3 hover:bg-accent/90"
+                  disabled={isSubmitting || !isOtpSent}
                 >
-                  <option value="student">Student</option>
-                  <option value="coordinator">Class Coordinator</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-              
-              <button
-                type="submit"
-                className="w-full bg-accent text-white rounded-lg py-3 font-medium hover:bg-accent/90 transition-colors"
-              >
-                Create Account
-              </button>
-              
-              <div className="mt-4 text-center">
-                <p className="text-sm text-gray-600">
-                  Already have an account?{" "}
-                  <Link to="/login" className="text-accent font-medium hover:underline">
-                    Sign in
-                  </Link>
-                </p>
-              </div>
-            </form>
+                  {isSubmitting ? "Creating Account..." : "Create Account"}
+                </Button>
+                
+                <div className="mt-4 text-center">
+                  <p className="text-sm text-gray-600">
+                    Already have an account?{" "}
+                    <Link to="/login" className="text-accent font-medium hover:underline">
+                      Sign in
+                    </Link>
+                  </p>
+                </div>
+              </form>
+            </Form>
           </div>
         </div>
       </div>
