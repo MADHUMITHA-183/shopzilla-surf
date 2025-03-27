@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -32,6 +33,14 @@ import {
   InputOTPGroup, 
   InputOTPSlot 
 } from "@/components/ui/input-otp";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 // Form validation schema
 const formSchema = z.object({
@@ -57,6 +66,9 @@ const formSchema = z.object({
     .regex(/^\d{10}$/, { message: "Mobile number must be 10 digits" }),
   role: z.enum(["student", "faculty", "admin"]),
   otp: z.string().length(6, { message: "OTP must be 6 digits" }).optional(),
+  agreeToTerms: z.boolean().refine(val => val === true, {
+    message: "You must agree to the terms and conditions",
+  }),
 })
 .refine(data => data.password === data.confirmPassword, {
   message: "Passwords do not match",
@@ -72,6 +84,7 @@ const Register: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
   
   // Initialize form
   const form = useForm<FormValues>({
@@ -86,6 +99,7 @@ const Register: React.FC = () => {
       mobile: "",
       role: "student",
       otp: "",
+      agreeToTerms: false,
     },
   });
   
@@ -136,12 +150,35 @@ const Register: React.FC = () => {
     }
   };
   
+  // Verify OTP function
+  const handleVerifyOTP = () => {
+    const otpValue = form.getValues("otp");
+    
+    if (!otpValue || otpValue.length !== 6) {
+      toast({
+        title: "Invalid OTP",
+        description: "Please enter a valid 6-digit OTP",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // In a real app, you would verify the OTP with your backend
+    // For demo purposes, we'll just accept any 6-digit OTP entered
+    setOtpVerified(true);
+    toast({
+      title: "OTP Verified",
+      description: "Your mobile number has been verified successfully.",
+      variant: "success",
+    });
+  };
+  
   // Handle form submission
   const onSubmit = async (values: FormValues) => {
-    if (!isOtpSent) {
+    if (!isOtpSent || !otpVerified) {
       toast({
         title: "Verification Required",
-        description: "Please verify your mobile number by requesting an OTP",
+        description: "Please verify your mobile number by requesting and verifying an OTP",
         variant: "destructive",
       });
       return;
@@ -239,273 +276,322 @@ const Register: React.FC = () => {
             <p className="text-gray-600">Sign up to access college supplies and services</p>
           </div>
           
-          <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="p-6 space-y-4">
-                <FormField
-                  control={form.control}
-                  name="fullName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Full Name</FormLabel>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <User className="h-5 w-5 text-gray-400" />
-                        </div>
-                        <FormControl>
-                          <Input
-                            placeholder="John Doe"
-                            className="pl-10"
-                            {...field}
-                          />
-                        </FormControl>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="course"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Course/Department</FormLabel>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <BookOpen className="h-5 w-5 text-gray-400" />
-                        </div>
-                        <FormControl>
-                          <Input
-                            placeholder="Computer Science"
-                            className="pl-10"
-                            {...field}
-                          />
-                        </FormControl>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email Address</FormLabel>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <Mail className="h-5 w-5 text-gray-400" />
-                        </div>
-                        <FormControl>
-                          <Input
-                            type="email"
-                            placeholder="you@example.com"
-                            className="pl-10"
-                            {...field}
-                          />
-                        </FormControl>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="year"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Year</FormLabel>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <CalendarDays className="h-5 w-5 text-gray-400" />
-                        </div>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            placeholder="1"
-                            className="pl-10"
-                            {...field}
-                            onChange={(e) => {
-                              const value = e.target.value === "" ? undefined : parseInt(e.target.value, 10);
-                              field.onChange(value);
-                            }}
-                          />
-                        </FormControl>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <KeyRound className="h-5 w-5 text-gray-400" />
-                        </div>
-                        <FormControl>
-                          <Input
-                            type={showPassword ? "text" : "password"}
-                            placeholder="••••••••"
-                            className="pl-10 pr-10"
-                            {...field}
-                          />
-                        </FormControl>
-                        <div 
-                          className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer" 
-                          onClick={() => setShowPassword(!showPassword)}
-                        >
-                          {showPassword ? (
-                            <EyeOffIcon className="h-5 w-5 text-gray-400" />
-                          ) : (
-                            <EyeIcon className="h-5 w-5 text-gray-400" />
-                          )}
-                        </div>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Confirm Password</FormLabel>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <KeyRound className="h-5 w-5 text-gray-400" />
-                        </div>
-                        <FormControl>
-                          <Input
-                            type={showConfirmPassword ? "text" : "password"}
-                            placeholder="••••••••"
-                            className="pl-10 pr-10"
-                            {...field}
-                          />
-                        </FormControl>
-                        <div 
-                          className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer" 
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        >
-                          {showConfirmPassword ? (
-                            <EyeOffIcon className="h-5 w-5 text-gray-400" />
-                          ) : (
-                            <EyeIcon className="h-5 w-5 text-gray-400" />
-                          )}
-                        </div>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="mobile"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Mobile Number</FormLabel>
-                      <div className="relative flex">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <Smartphone className="h-5 w-5 text-gray-400" />
-                        </div>
-                        <FormControl>
-                          <Input
-                            type="tel"
-                            placeholder="9876543210"
-                            className="pl-10 flex-grow"
-                            {...field}
-                          />
-                        </FormControl>
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          className="ml-2" 
-                          onClick={handleSendOTP}
-                          disabled={isOtpSent}
-                        >
-                          {isOtpSent ? "OTP Sent" : "Send OTP"}
-                        </Button>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                {isOtpSent && (
+          <Card className="border shadow-lg">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-2xl">Create an account</CardTitle>
+              <CardDescription>
+                Fill in your details to create your account
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <FormField
                     control={form.control}
-                    name="otp"
+                    name="fullName"
                     render={({ field }) => (
-                      <FormItem className="mt-4">
-                        <FormLabel>Enter OTP</FormLabel>
+                      <FormItem>
+                        <FormLabel>Full Name</FormLabel>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <User className="h-5 w-5 text-gray-400" />
+                          </div>
+                          <FormControl>
+                            <Input
+                              placeholder="John Doe"
+                              className="pl-10"
+                              {...field}
+                            />
+                          </FormControl>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="course"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Course/Department</FormLabel>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <BookOpen className="h-5 w-5 text-gray-400" />
+                          </div>
+                          <FormControl>
+                            <Input
+                              placeholder="Computer Science"
+                              className="pl-10"
+                              {...field}
+                            />
+                          </FormControl>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email Address</FormLabel>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Mail className="h-5 w-5 text-gray-400" />
+                          </div>
+                          <FormControl>
+                            <Input
+                              type="email"
+                              placeholder="you@example.com"
+                              className="pl-10"
+                              {...field}
+                            />
+                          </FormControl>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="year"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Year</FormLabel>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <CalendarDays className="h-5 w-5 text-gray-400" />
+                          </div>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              placeholder="1"
+                              className="pl-10"
+                              {...field}
+                              onChange={(e) => {
+                                const value = e.target.value === "" ? undefined : parseInt(e.target.value, 10);
+                                field.onChange(value);
+                              }}
+                            />
+                          </FormControl>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Password</FormLabel>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <KeyRound className="h-5 w-5 text-gray-400" />
+                          </div>
+                          <FormControl>
+                            <Input
+                              type={showPassword ? "text" : "password"}
+                              placeholder="••••••••"
+                              className="pl-10 pr-10"
+                              {...field}
+                            />
+                          </FormControl>
+                          <div 
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer" 
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? (
+                              <EyeOffIcon className="h-5 w-5 text-gray-400" />
+                            ) : (
+                              <EyeIcon className="h-5 w-5 text-gray-400" />
+                            )}
+                          </div>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirm Password</FormLabel>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <KeyRound className="h-5 w-5 text-gray-400" />
+                          </div>
+                          <FormControl>
+                            <Input
+                              type={showConfirmPassword ? "text" : "password"}
+                              placeholder="••••••••"
+                              className="pl-10 pr-10"
+                              {...field}
+                            />
+                          </FormControl>
+                          <div 
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer" 
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          >
+                            {showConfirmPassword ? (
+                              <EyeOffIcon className="h-5 w-5 text-gray-400" />
+                            ) : (
+                              <EyeIcon className="h-5 w-5 text-gray-400" />
+                            )}
+                          </div>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="mobile"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Mobile Number</FormLabel>
+                        <div className="relative flex">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Smartphone className="h-5 w-5 text-gray-400" />
+                          </div>
+                          <FormControl>
+                            <Input
+                              type="tel"
+                              placeholder="9876543210"
+                              className="pl-10 flex-grow"
+                              {...field}
+                            />
+                          </FormControl>
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            className="ml-2" 
+                            onClick={handleSendOTP}
+                            disabled={isOtpSent && otpVerified}
+                          >
+                            {isOtpSent && otpVerified ? (
+                              <span className="flex items-center">
+                                <CheckCircle className="h-4 w-4 mr-1 text-green-500" />
+                                Verified
+                              </span>
+                            ) : isOtpSent ? (
+                              "Resend OTP"
+                            ) : (
+                              "Send OTP"
+                            )}
+                          </Button>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {isOtpSent && !otpVerified && (
+                    <div className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="otp"
+                        render={({ field }) => (
+                          <FormItem className="space-y-2">
+                            <FormLabel>Enter OTP</FormLabel>
+                            <FormControl>
+                              <InputOTP maxLength={6} {...field}>
+                                <InputOTPGroup className="gap-2">
+                                  <InputOTPSlot index={0} className="h-10 w-10 rounded-md border" />
+                                  <InputOTPSlot index={1} className="h-10 w-10 rounded-md border" />
+                                  <InputOTPSlot index={2} className="h-10 w-10 rounded-md border" />
+                                  <InputOTPSlot index={3} className="h-10 w-10 rounded-md border" />
+                                  <InputOTPSlot index={4} className="h-10 w-10 rounded-md border" />
+                                  <InputOTPSlot index={5} className="h-10 w-10 rounded-md border" />
+                                </InputOTPGroup>
+                              </InputOTP>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <Button 
+                        type="button"
+                        variant="secondary"
+                        className="w-full" 
+                        onClick={handleVerifyOTP}
+                      >
+                        Verify OTP
+                      </Button>
+                    </div>
+                  )}
+                  
+                  <FormField
+                    control={form.control}
+                    name="role"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Role</FormLabel>
                         <FormControl>
-                          <InputOTP maxLength={6} {...field}>
-                            <InputOTPGroup>
-                              <InputOTPSlot index={0} />
-                              <InputOTPSlot index={1} />
-                              <InputOTPSlot index={2} />
-                              <InputOTPSlot index={3} />
-                              <InputOTPSlot index={4} />
-                              <InputOTPSlot index={5} />
-                            </InputOTPGroup>
-                          </InputOTP>
+                          <select
+                            className="w-full rounded-lg border border-gray-300 py-3 px-4 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+                            {...field}
+                          >
+                            <option value="student">Student</option>
+                            <option value="faculty">Faculty</option>
+                            <option value="admin">Admin</option>
+                          </select>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                )}
-                
-                <FormField
-                  control={form.control}
-                  name="role"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Role</FormLabel>
-                      <FormControl>
-                        <select
-                          className="w-full rounded-lg border border-gray-300 py-3 px-4 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
-                          {...field}
-                        >
-                          <option value="student">Student</option>
-                          <option value="faculty">Faculty</option>
-                          <option value="admin">Admin</option>
-                        </select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <Button
-                  type="submit"
-                  className="w-full bg-accent text-white py-3 hover:bg-accent/90"
-                  disabled={isSubmitting || !isOtpSent}
-                >
-                  {isSubmitting ? "Creating Account..." : "Create Account"}
-                </Button>
-                
-                <div className="mt-4 text-center">
-                  <p className="text-sm text-gray-600">
-                    Already have an account?{" "}
-                    <Link to="/login" className="text-accent font-medium hover:underline">
-                      Sign in
-                    </Link>
-                  </p>
-                </div>
-              </form>
-            </Form>
-          </div>
+                  
+                  <FormField
+                    control={form.control}
+                    name="agreeToTerms"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 py-2">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel className="text-sm font-normal">
+                            I agree to the terms of service and privacy policy
+                          </FormLabel>
+                          <FormMessage />
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <Button
+                    type="submit"
+                    className="w-full bg-accent text-white py-3 hover:bg-accent/90"
+                    disabled={isSubmitting || !otpVerified}
+                  >
+                    {isSubmitting ? "Creating Account..." : "Create Account"}
+                  </Button>
+                  
+                  <div className="mt-4 text-center">
+                    <p className="text-sm text-gray-600">
+                      Already have an account?{" "}
+                      <Link to="/login" className="text-accent font-medium hover:underline">
+                        Sign in
+                      </Link>
+                    </p>
+                  </div>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
         </div>
       </div>
       <Footer />
