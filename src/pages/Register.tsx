@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -104,11 +103,11 @@ const Register: React.FC = () => {
     }
     
     try {
-      const response = await fetch(`${supabase.functions.url}/generate-otp`, {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/generate-otp`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${supabase.auth.getSession()}`,
+          "Authorization": `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
         },
         body: JSON.stringify({ mobile: mobileValue }),
       });
