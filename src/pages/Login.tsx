@@ -210,92 +210,11 @@ const Login: React.FC = () => {
           </div>
           
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-            <Tabs defaultValue="otp" className="w-full">
+            <Tabs defaultValue="password" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="otp">Login with OTP</TabsTrigger>
                 <TabsTrigger value="password">Login with Password</TabsTrigger>
+                <TabsTrigger value="otp">Login with OTP</TabsTrigger>
               </TabsList>
-              
-              <TabsContent value="otp" className="p-6">
-                <Form {...otpForm}>
-                  <form onSubmit={otpForm.handleSubmit(onSubmitOtp)} className="space-y-6">
-                    <FormField
-                      control={otpForm.control}
-                      name="mobile"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Mobile Number</FormLabel>
-                          <div className="relative flex">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                              <Smartphone className="h-5 w-5 text-gray-400" />
-                            </div>
-                            <FormControl>
-                              <Input
-                                type="tel"
-                                placeholder="9876543210"
-                                className="pl-10 flex-grow"
-                                {...field}
-                              />
-                            </FormControl>
-                            <Button 
-                              type="button" 
-                              variant="outline" 
-                              className="ml-2" 
-                              onClick={handleSendOTP}
-                              disabled={isOtpSent}
-                            >
-                              {isOtpSent ? "OTP Sent" : "Send OTP"}
-                            </Button>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    {isOtpSent && (
-                      <FormField
-                        control={otpForm.control}
-                        name="otp"
-                        render={({ field }) => (
-                          <FormItem className="mt-4">
-                            <FormLabel>Enter OTP</FormLabel>
-                            <FormControl>
-                              <InputOTP maxLength={6} {...field}>
-                                <InputOTPGroup>
-                                  <InputOTPSlot index={0} />
-                                  <InputOTPSlot index={1} />
-                                  <InputOTPSlot index={2} />
-                                  <InputOTPSlot index={3} />
-                                  <InputOTPSlot index={4} />
-                                  <InputOTPSlot index={5} />
-                                </InputOTPGroup>
-                              </InputOTP>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    )}
-                    
-                    <Button
-                      type="submit"
-                      className="w-full bg-accent text-white py-3 hover:bg-accent/90"
-                      disabled={isSubmitting || !isOtpSent}
-                    >
-                      {isSubmitting ? "Verifying..." : "Verify & Sign In"}
-                    </Button>
-                    
-                    <div className="mt-4 text-center">
-                      <p className="text-sm text-gray-600">
-                        Don't have an account?{" "}
-                        <Link to="/register" className="text-accent font-medium hover:underline">
-                          Create account
-                        </Link>
-                      </p>
-                    </div>
-                  </form>
-                </Form>
-              </TabsContent>
               
               <TabsContent value="password" className="p-6">
                 <Form {...loginForm}>
@@ -364,6 +283,87 @@ const Login: React.FC = () => {
                       disabled={isSubmitting}
                     >
                       {isSubmitting ? "Signing In..." : "Sign In"}
+                    </Button>
+                    
+                    <div className="mt-4 text-center">
+                      <p className="text-sm text-gray-600">
+                        Don't have an account?{" "}
+                        <Link to="/register" className="text-accent font-medium hover:underline">
+                          Create account
+                        </Link>
+                      </p>
+                    </div>
+                  </form>
+                </Form>
+              </TabsContent>
+              
+              <TabsContent value="otp" className="p-6">
+                <Form {...otpForm}>
+                  <form onSubmit={otpForm.handleSubmit(onSubmitOtp)} className="space-y-6">
+                    <FormField
+                      control={otpForm.control}
+                      name="mobile"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Mobile Number</FormLabel>
+                          <div className="relative flex">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                              <Smartphone className="h-5 w-5 text-gray-400" />
+                            </div>
+                            <FormControl>
+                              <Input
+                                type="tel"
+                                placeholder="9876543210"
+                                className="pl-10 flex-grow"
+                                {...field}
+                              />
+                            </FormControl>
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              className="ml-2" 
+                              onClick={handleSendOTP}
+                              disabled={isOtpSent}
+                            >
+                              {isOtpSent ? "OTP Sent" : "Send OTP"}
+                            </Button>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    {isOtpSent && (
+                      <FormField
+                        control={otpForm.control}
+                        name="otp"
+                        render={({ field }) => (
+                          <FormItem className="mt-4">
+                            <FormLabel>Enter OTP</FormLabel>
+                            <FormControl>
+                              <InputOTP maxLength={6} {...field}>
+                                <InputOTPGroup>
+                                  <InputOTPSlot index={0} />
+                                  <InputOTPSlot index={1} />
+                                  <InputOTPSlot index={2} />
+                                  <InputOTPSlot index={3} />
+                                  <InputOTPSlot index={4} />
+                                  <InputOTPSlot index={5} />
+                                </InputOTPGroup>
+                              </InputOTP>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+                    
+                    <Button
+                      type="submit"
+                      className="w-full bg-accent text-white py-3 hover:bg-accent/90"
+                      disabled={isSubmitting || !isOtpSent}
+                    >
+                      {isSubmitting ? "Verifying..." : "Verify & Sign In"}
                     </Button>
                     
                     <div className="mt-4 text-center">
